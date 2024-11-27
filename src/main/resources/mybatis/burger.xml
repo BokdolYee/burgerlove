@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dev.mvc.burger.BurgerDAOInter"> <!-- SB가 자동으로 구현하여 연동하는 interface -->
+ <insert id="create" parameterType="dev.mvc.burger.BurgerVO">
+  INSERT INTO burger(burgerno, name, brand, seqno, isvisible, rdate)
+  VALUES(burger_seq.nextval, #{name}, #{brand}, #{seqno}, #{isvisible}, sysdate)
+ </insert>
+
+<!-- SQL -> CateVO 객체 레코드 수만큼 생성 -> ArrayList<cateVO> 객체 생성되어 CateDAOInter로 리턴 -->
+<!-- <select id="list_all" resultType="dev.mvc.burger.BurgerVO">
+  SELECT burgerno, name, brand, seqno, isvisible, rdate
+  FROM burger
+  ORDER BY burgerno ASC
+</select> -->
+
+<!-- SQL -> CateVO 객체 레코드 수만큼 생성 -> ArrayList<cateVO> 객체 생성되어 CateDAOInter로 리턴 -->
+<select id="read" resultType="dev.mvc.burger.BurgerVO" parameterType="Integer">
+  SELECT burgerno, brand, name, cnt, seqno, isvisible, rdate
+  FROM burger
+  WHERE burgerno=#{burgerno}
+</select>
+
+<!-- 처리 결과: 처리된 레코드 개수 -->
+<update id="update" parameterType="dev.mvc.burger.BurgerVO">
+  UPDATE burger 
+  SET name = #{name}, brand = #{brand}, cnt=#{cnt}, seqno = #{seqno}, isvisible = #{isvisible}, rdate = sysdate 
+  WHERE burgerno = #{burgerno}
+</update>
+
+<delete id="delete" parameterType="int">
+  DELETE FROM burger 
+  WHERE burgerno = #{burgerno}
+</delete>
+
+<!-- 버거 삭제 시 해당 카테고리에 속한 전체 글 삭제 -->
+<delete id="delete_contents" parameterType="int">
+  DELETE FROM burgerpost
+  WHERE burgerno = #{burgerno}
+</delete>
+
+<!-- 하위 게시물 삭제 시 버거에 속한 전체 글 삭제량 버거에 반영 -->
+<update id="sync_cnt" parameterType="dev.mvc.burger.BurgerVO">
+  UPDATE burger
+  SET cnt = cnt - (
+    SELECT cnt
+    FROM burger
+    WHERE burgerno = #{burgerno})
+  WHERE brand = (
+    SELECT brand
+    FROM burger
+    WHERE burgerno = #{burgerno})
+  AND name = '--'
+</update>
+
+<!-- 우선 순위 높임. 10등 -> 1등 -->
+<update id="update_seqno_forward" parameterType="Integer">
+  UPDATE burger 
+  SET seqno = seqno - 1
+  WHERE burgerno = #{burgerno}
+</update>
+
+<!-- 우선 순위 낮춤. 1등 -> 10등 -->
+<update id="update_seqno_backward" parameterType="Integer">
+  UPDATE burger 
+  SET seqno = seqno + 1
+  WHERE burgerno = #{burgerno}
+</update>
+
+<!-- 정렬 순서 변경 
+SQL -> CateVO 객체 레코드 수만큼 생성 -> ArrayList<cateVO> 객체 생성되어 CateDAOInter로 리턴 -->
+<select id="list_all" resultType="dev.mvc.burger.BurgerVO">
+  SELECT burgerno, name, brand, cnt, seqno, isvisible, rdate
+  FROM burger
+  ORDER BY seqno ASC
+</select>
+
+<!-- 게시물 공개 설정 -->
+<update id="update_isvisible_t" parameterType="Integer">
+  UPDATE burger
+  SET isvisible = 'T'
+  WHERE burgerno = #{burgerno}
+</update>
+
+<!-- 게시물 비공개 설정 -->
+<update id="update_isvisible_f" parameterType="Integer">
+  UPDATE burger
+  SET isvisible = 'F'
+  WHERE burgerno = #{burgerno}
+</update>
+
+<!-- 숨긴 종류를 제외하고 접속자에게 공개할 종류 출력 -->
+<select id="list_all_brand_y" resultType="dev.mvc.burger.BurgerVO">
+  SELECT burgerno, name, brand, cnt, seqno, isvisible, rdate
+  FROM burger
+  WHERE name='--' AND isvisible='T'
+  ORDER BY seqno ASC
+</select>
+
+<!-- 특정 종류에 속하면서, 숨긴 게시물을 제외하고 접속자에게 공개할 게시물 출력 -->
+<select id="list_all_name_y" resultType="dev.mvc.burger.BurgerVO" parameterType="String">
+  SELECT burgerno, name, brand, cnt, seqno, isvisible, rdate
+  FROM burger
+  WHERE name!='--' AND isvisible='T' AND brand=#{brand}
+  ORDER BY seqno ASC
+</select>
+
+<!-- 종류 목록 -->
+<select id="brandset" resultType="String">
+  SELECT brand 
+  FROM burger 
+  WHERE name='--' 
+  ORDER BY seqno ASC
+</select>
+
+<!-- 검색 -->
+<select id="list_search" resultType="dev.mvc.burger.BurgerVO" parameterType="String">
+  SELECT burgerno, name, brand, cnt, seqno, isvisible, rdate
+  FROM burger
+  <if test="word !=null and word !=''"> <!-- 검색 상태라면 WHERE 생성 동적 sql -->
+    WHERE (UPPER(brand) LIKE '%' || UPPER(#{word}) || '%') 
+    OR (UPPER(name) LIKE '%' || UPPER(#{word}) || '%')
+  </if>
+  ORDER BY seqno ASC
+</select>
+
+<!-- 검색 개수 -->
+<select id="list_search_count" resultType="int" parameterType="String">
+  SELECT COUNT(*) as cnt
+  FROM burger
+  <if test="word !=null and word !=''"> <!-- 검색 상태라면 WHERE 생성 동적 sql -->
+    WHERE (UPPER(brand) LIKE '%' || UPPER(#{word}) || '%') 
+    OR (UPPER(name) LIKE '%' || UPPER(#{word}) || '%')
+  </if>
+</select>
+
+<!-- 검색 + 페이징 -->
+<select id="list_search_paging" resultType="dev.mvc.burger.BurgerVO" parameterType="Map">
+  SELECT burgerno, name, brand, cnt, seqno, isvisible, rdate, r
+  FROM(
+    SELECT burgerno, name, brand, cnt, seqno, isvisible, rdate, rownum as r
+    FROM(
+        SELECT burgerno, name, brand, cnt, seqno, isvisible, rdate
+        FROM burger
+        WHERE (UPPER(brand) LIKE '%' || UPPER('${brand}') || '%') OR (UPPER(name) LIKE '%' || UPPER('${brand}') || '%')
+        ORDER BY seqno ASC
+    )
+  )
+  WHERE r &gt;= #{start_num} AND r &lt;= #{end_num} <!-- WHERE r >= 1 AND r <= 3 -->
+</select>
+
+</mapper>

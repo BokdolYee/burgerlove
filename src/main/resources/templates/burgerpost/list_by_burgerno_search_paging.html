@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+
+<html layout:decorate="~{layout}"> <!-- layout.html 상속-->
+<div layout:fragment="content">
+
+  <div class='title_line'>
+    <span th:text="${burgerVO.brand}" class="title_line_text"></span >
+    > <span th:text="${burgerVO.name}" class="title_line_text"></span >
+    <span th:if="${word != ''}" th:text="|> ${word} (${search_count} 건)|" class="title_line_text"></span>
+  </div>
+
+  <aside class="aside_right">
+    <span th:if="${session.grade == 'admin'}">
+      <a th:href="@{|/burgerpost/create?burgerno=${burgerVO.burgerno}|}">등록</a>
+      <span class="menu_devide">│</span>    
+    </span>
+    
+    <a href="javascript:location.reload();">새로고침</a>
+    <span class='menu_divide' >│</span>    
+    <a th:href="@{|./list_by_burgerno?burgerno=${burgerVO.burgerno }&word=${word }&now_page=${now_page}|}">목록형</a>    
+    <span class='menu_divide' >│</span>
+    <a th:href="@{|./list_by_burgerno_grid?burgerno=${burgerVO.burgerno }&word=${word }&now_page=${now_page}|}">갤러리형</a>
+    
+  </aside> 
+
+  <!-- /burgerpost/list_search_com.html 파일의 list_search_fragment import -->
+  <div th:replace="~{burgerpost/list_search_com::list_search_fragment}"></div>
+     
+  <div class='menu_line'></div>
+       
+  <table class="table table-striped" style='width: 100%;'>
+    <colgroup>
+      <col style='width: 10%;'/>
+      <col style='width: 90%;'/>
+    </colgroup>
+    <tr>
+      <th class='th_bs'>파일</TH>
+      <th class='th_bs'>제목</th>
+    </tr>
+   
+    <tr th:if="${list.size() > 0}" th:each="burgerpostVO, status:${list}" 
+         th:attr="onclick=|location.href='/burgerpost/read?postno=${burgerpostVO.postno}&word=${word}&now_page=${now_page}'|"
+         style="cursor: pointer; height: 90px;">
+      <td class='td_basic' style="vertical-align: middle; text-align: center;">
+        <div th:if="${burgerpostVO.file1.endsWith('jpg') or burgerpostVO.file1.endsWith('png')  or burgerpostVO.file1.endsWith('gif')}">
+          <img th:src="@{|/burgerpost/storage/${burgerpostVO.thumb1}|}" style="width: 120px; height: 90px;">
+        </div>
+
+        <!--%이미지가 아닌 파일은 파일명만 출력 %-->
+        <div th:if="${((burgerpostVO.file1.endsWith('jpg') or burgerpostVO.file1.endsWith('png')  or burgerpostVO.file1.endsWith('gif')) == false) and (burgerpostVO.size1 > 0)}">
+          <span th:text="${burgerpostVO.file1}"></span>
+        </div>
+
+        <!--%파일이 없는 경우 기본 이미지 출력 %-->
+        <div th:if="${burgerpostVO.size1 == 0}">
+          <img src="/burgerpost/images/none1.png" style="width: 120px; height: 90px;">
+        </div>
+                
+      </td>
+      </td>
+      <td class='td_left'>
+        <span th:text="${burgerpostVO.title}" style="font-weight: bold;"></span>
+        <span th:text="| ${burgerpostVO.rdate.substring(0, 10)}|"></span>
+        <span th:if="${burgerpostVO.file1 != null and burgerpostVO.file1 != ''}"><img src="/burgerpost/images/imgexist.png" style="border-top: 10px;"></span><br>
+        
+        <span th:if="${burgerpostVO.content.length() > 160 }" 
+                  th:text="|${burgerpostVO.content.substring(0, 160) }...|"></span>
+        <span th:if="${burgerpostVO.content.length() <= 160 }" 
+                  th:text="|${burgerpostVO.content}|"></span>
+        
+      </td>
+    </tr>
+
+    <tr th:if="${list.size() == 0}">
+      <td colspan="2" style="text-align: center;">관련 글이 등록되지 않았습니다.</td>
+    </tr> 
+
+  </table>
+   
+  <!-- 페이지 버튼 목록 출력 시작 -->
+  <div class="bottom_menu" th:utext="${paging}"></div>
+  <!-- 페이지 버튼 목록 출력 종료 --> 
+
+</div>
+</html>

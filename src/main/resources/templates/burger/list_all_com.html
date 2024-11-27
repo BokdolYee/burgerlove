@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+
+<!-- /* <div th:replace="~{burger/list_all_com::list_all_fragment}"></div>
+ "/burger/list_all_com.html" 파일의 list_all_fragment를 가져다 사용 */-->
+<div th:fragment="list_all_fragment">  
+  <table class="table table-hover" style="width: 100%;">
+    <colgroup>
+      <col style='width: 10%;'/>
+      <col style='width: 20%;'/>
+      <col style='width: 30%;'/>
+      <col style='width: 10%;'/>
+      <col style='width: 20%;'/>
+      <col style='width: 10%;'/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th class="th_bs">햄버거 번호</th>
+        <th class="th_bs">브랜드</th>
+        <th class="th_bs">이름</th>
+        <th class="th_bs">자료수</th>
+        <th class="th_bs">작성일</th>
+        <th class="th_bs">기타</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="burgerVO, status:${list}">
+        <td class="td_bs" th:text="${no - status.index}"></td>
+        <td class="td_bs" th:text="${burgerVO.brand}"></td>
+        <td class="td_bs">
+          <a th:href="@{|/burger/read/${burgerVO.burgerno}?word=${word}&now_page=${now_page}|}" style="display:block;" th:text="${burgerVO.name}"></a>
+        </td>
+        <td class="td_bs" th:text="${burgerVO.cnt}"></td>
+        <td class="td_bs" th:text="${burgerVO.rdate}"></td>
+        <td class="td_bs">
+          <span th:text="${burgerVO.seqno}"></span>
+          <span th:if="${burgerVO.isvisible == 'T'}">
+            <a th:href="@{|/burger/update_isvisible_f/${burgerVO.burgerno}?word=${word}&now_page=${now_page}|}"><img src="/burger/images/sunny.png" class="icon" title="숨기기"></a>
+          </span>
+          <span th:if="${burgerVO.isvisible == 'F'}">
+            <a th:href="@{|/burger/update_isvisible_t/${burgerVO.burgerno}?word=${word}&now_page=${now_page}|}"><img src="/burger/images/raining.png" class="icon" title="보이기"></a>
+          </span>
+          <a th:href="@{|/burger/update_seqno_forward/${burgerVO.burgerno}?word=${word}&now_page=${now_page}|}"><img src="/burger/images/arrow-up-big.png" class="icon" title="우선 순위 증가"></a>
+          <a th:href="@{|/burger/update_seqno_backward/${burgerVO.burgerno}?word=${word}&now_page=${now_page}|}"><img src="/burger/images/arrow-down-big.png" class="icon" title="우선 순위 감소"></a>        
+          <a th:href="@{|/burger/update/${burgerVO.burgerno}?word=${word}&now_page=${now_page}|}"><img src="/burger/images/add-person-alt1.png" class="icon" title="수정"></a> <!-- /static 기준 -->
+          <a th:href="@{|/burger/delete/${burgerVO.burgerno}?word=${word}&now_page=${now_page}|}"><img src="/burger/images/ipod.png" class="icon" title="삭제"></a> <!-- /* /static 기준 */ -->
+          <a th:if="${burgerVO.name != '--'}" th:href="@{|/burgerpost/create?burgerno=${burgerVO.burgerno}|}"><img src="/burger/images/add-person.png" class="icon" title="등록"></a> <!-- /static 기준 -->
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  
+  <!-- 페이지 버튼 목록 출력 시작-->
+  <div class="Bottom_menu" th:utext="${paging}"></div>
+  <!-- 페이지 버튼 목록 출력 종료-->
+</div>
+</html>
